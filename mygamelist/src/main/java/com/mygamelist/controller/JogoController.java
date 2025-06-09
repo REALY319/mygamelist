@@ -27,12 +27,30 @@ public class JogoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarJogo(@PathVariable Long id) {
-        if (jogoRepository.existsById(id)) {
-            jogoRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    public void deletar(@PathVariable Long id) {
+        repository.deleteById(id);
+    }
+
+    // GET /jogos/{id} → buscar jogo específico (necessário para preencher o formulário ao editar)
+    @GetMapping("/{id}")
+    public Jogo buscarPorId(@PathVariable Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Jogo não encontrado com id: " + id));
+    }
+
+    // PUT /jogos/{id} → atualizar jogo existente
+    @PutMapping("/{id}")
+    public Jogo atualizarJogo(@PathVariable Long id, @RequestBody Jogo jogoAtualizado) {
+        return repository.findById(id)
+                .map(jogoExistente -> {
+                    jogoExistente.setTitulo(jogoAtualizado.getTitulo());
+                    jogoExistente.setGenero(jogoAtualizado.getGenero());
+                    jogoExistente.setPlataforma(jogoAtualizado.getPlataforma());
+                    jogoExistente.setAnoLancamento(jogoAtualizado.getAnoLancamento());
+                    jogoExistente.setCapaUrl(jogoAtualizado.getCapaUrl());
+                    return repository.save(jogoExistente);
+                })
+                .orElseThrow(() -> new RuntimeException("Jogo não encontrado com id: " + id));
     }
 }
 

@@ -1,5 +1,7 @@
+let idEditando = null;
 const form = document.getElementById('form-jogo');
 const lista = document.getElementById('lista-jogos');
+const botaoSubmit = document.getElementById('btn-submit');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -12,8 +14,14 @@ form.addEventListener('submit', async (e) => {
     capaUrl: form.capaUrl.value
   };
 
-  const resposta = await fetch('http://localhost:8080/jogos', {
-    method: 'POST',
+  const url = idEditando
+    ? `http://localhost:8080/jogos/${idEditando}`
+    : `http://localhost:8080/jogos`;
+
+  const metodo = idEditando ? 'PUT' : 'POST';
+
+  const resposta = await fetch(url, {
+    method: metodo,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(dados)
   });
@@ -21,8 +29,10 @@ form.addEventListener('submit', async (e) => {
   if (resposta.ok) {
     form.reset();
     carregarJogos();
+    idEditando = null;
+    botaoSubmit.textContent = 'Adicionar Jogo'; // Volta ao modo criação
   } else {
-    alert('Erro ao salvar jogo');
+    alert(`Erro ao ${idEditando ? 'editar' : 'salvar'} jogo`);
   }
 });
 
@@ -41,6 +51,8 @@ async function carregarJogos() {
       ${jogo.capaUrl ? `<img src="${jogo.capaUrl}" alt="Capa" width="150">` : ''}
       <br>
       <button onclick="excluirJogo(${jogo.id})">Excluir</button>
+      <br>
+      <button onclick="editarJogo(${jogo.id})">Editar</button>
     `;
     lista.appendChild(div);
   });
@@ -61,5 +73,23 @@ async function excluirJogo(id) {
   }
 }
 
-carregarJogos();
+async function editarJogo(id) {
+  const resposta = await fetch(`http://localhost:8080/jogos/${id}`);
+  if (!resposta.ok) {
+    alert('Erro ao carregar dados do jogo para edição');
+    return;
+  }
 
+  const jogo = await resposta.json();
+
+  form.titulo.value = jogo.titulo;
+  form.genero.value = jogo.genero;
+  form.plataforma.value = jogo.plataforma;
+  form.anoLancamento.value = jogo.anoLancamento;
+  form.capaUrl.value = jogo.capaUrl;
+
+  idEditando = id;
+  botaoSubmit.textContent = 'Atualizar Jogo';
+}
+
+carregarJogos();
